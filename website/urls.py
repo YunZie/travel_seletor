@@ -26,7 +26,7 @@ urlpatterns = [
 ]
 
 urlpatterns += [
-    # url(r'^auth/$', app.UserToken.as_view()),
+    url(r'^travel/$', app.Date_Processor.as_view()),
     # url(r'^user/$', app.UserAccount.as_view()),
     # url(r'^mgr/$', app.AdminMgr.as_view()),
 ]

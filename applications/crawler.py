@@ -9,11 +9,12 @@ params = {
 # response = requests.get("https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-003", params = params)
 # with open('original_data.txt','a+') as f:
 # 	f.write(str(response.json()))
-with open('./data.json','rb') as f:
-	data = json.load(f)
-with open('./meteorological.json','rb') as f:
-	meteorological = json.load(f)
 
+# with open('./data.json','rb') as f:
+# 	data = json.load(f)
+# with open('./meteorological.json','rb') as f:
+# 	meteorological = json.load(f)
+data = {}
 def all_key(dict_data, _dict = {}, all_data = []):
 
 	def dfs(value):
@@ -24,6 +25,10 @@ def all_key(dict_data, _dict = {}, all_data = []):
 				all_key(val)
 
 	for key, val in dict_data.items():
+
+		if key == 'locationsName':
+			_dict['city'] = val
+
 		if key == 'locationName':
 			_dict['location'] = val
 
