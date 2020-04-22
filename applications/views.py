@@ -11,6 +11,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes, action
+from django.db import connection
 
 import json
 import os
@@ -32,6 +33,14 @@ def trans_data_format(all_data : list, allow_columns : dict) -> list:
         result.append(_dict)
     return result
 
+class Travel_API(APIView):
+    def get(self, request):
+        # with connection.cursor() as cursor:
+        #     cursor.execute("SELECT * FROM ")
+        #     rtn_data = cursor.fetchall()
+        return JsonResponse()
+
+
 class Date_Processor(APIView):
     def get(self, request):
         return HttpResponse("")
@@ -39,7 +48,6 @@ class Date_Processor(APIView):
     def post(self, request):
         with open('./dist/weather.json', 'rb+') as f:
            all_data = json.load(f)
-        print(request.data)
         city_allow_columns = {
             'city' : 'city', 
             'location' : 'district', 
@@ -48,23 +56,23 @@ class Date_Processor(APIView):
         }
         city_data = trans_data_format(all_data, city_allow_columns)
         city_data = [dict(t) for t in {tuple(d.items()) for d in city_data}]
-        
-        # city_serializers = CitySerializers(data=city_data, context=request, many=True)
-        # if not city_serializers.is_valid():
-        #     return Response(city_serializers.errors, status=status.HTTP_400_BAD_REQUEST)
-        # city_serializers.save()
 
+        city_serializers = CitySerializers(data=city_data, context=request, many=True)
+        if city_serializers.is_valid():
+            return Response(city_serializers.errors, status=status.HTTP_400_BAD_REQUEST)
+        city_serializers.save()
+        
         items_allow_columns = {
             'description' : 'description', 
             'elementName' : 'element_name', 
         }
-        items = trans_data_format(all_data, items_allow_columns)
-        items = [dict(t) for t in {tuple(d.items()) for d in items}]
-
-        # items_serializers = ItemsSerializers(data=items, context=request, many=True)
-        # if not items_serializers.is_valid():
-        #     return Response(items_serializers.errors, status=status.HTTP_400_BAD_REQUEST)
-        # items_serializers.save()
+        items_data = trans_data_format(all_data, items_allow_columns)
+        items_data = [dict(t) for t in {tuple(d.items()) for d in items_data}]
+        
+        items_serializers = ItemsSerializers(data=items_data, context=request, many=True)
+        if items_serializers.is_valid():
+            return Response(items_serializers.errors, status=status.HTTP_400_BAD_REQUEST)
+        items_serializers.save()
 
         series_allow_columns = {
             'measures' : 'measure', 
@@ -75,12 +83,22 @@ class Date_Processor(APIView):
             'location' : 'city_id',  #代替
             'elementName' : 'items_id',  #代替
         }
-        series = trans_data_format(all_data, series_allow_columns)
-        
-        # series_serializers = SeriesSerializers(data=series, context=request, many=True)
-        # if not series_serializers.is_valid():
-        #     return Response(series_serializers.errors, status=status.HTTP_400_BAD_REQUEST)
-        # series_serializers.save()
+        series_data = trans_data_format(all_data, series_allow_columns)
+        items_obj = items.objects.all()
+        city_obj = city.objects.all()
+        # print(items_obj.filter(element_name = 'PoP12h'), city_obj.filter(district='北投區'))
+        items_mapping = {i['element_name']:i['id'] for i in items_obj.values('id','element_name') }
+        city_mapping = {i['district']:i['id'] for i in city_obj.values('id','district') }
+        print(items_mapping)
+        print(city_mapping)
+        for element in series_data:
+            element['items_id'] = items_mapping[element['items_id']]
+            element['city_id'] = city_mapping[element['city_id']]
+        print(series_data)
+        series_serializers = SeriesSerializers(data=series_data, context=request, many=True)
+        if not series_serializers.is_valid():
+            return Response(series_serializers.errors, status=status.HTTP_400_BAD_REQUEST)
+        series_serializers.save()
 
         return JsonResponse(items,safe=False)
 

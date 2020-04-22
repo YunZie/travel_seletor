@@ -4,8 +4,8 @@ class city(models.Model):
     id = models.AutoField(
         primary_key=True
         )
-    city = models.DateField(
-        auto_now_add=True
+    city = models.CharField(
+        max_length = 10,
         )
     district = models.CharField(
         max_length = 10,
@@ -52,4 +52,4 @@ class series(models.Model):
     end_time = models.DateTimeField()
 
     class Meta:
-        unique_together = ()
+        unique_together = ('city', 'items', 'measure', 'start_time')
