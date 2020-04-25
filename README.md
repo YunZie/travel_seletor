@@ -1,3 +1,11 @@
-virtualenv venv
+install
+"""
+python manage.py makemigrations
+python manage.py migrate
+"""
 
-source venv/bin/activate
+
+start run
+"""
+python manage.py runserver
+"""

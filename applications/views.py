@@ -24,6 +24,7 @@ from math import sin, cos, sqrt, atan2, radians
 from applications.crawler import all_key
 from applications.models import city, items, series, sights
 from applications.serializers import *	
+from constant import constant
 import numpy
 import pandas as pd
 
@@ -92,30 +93,54 @@ class Travel_API(APIView):
         for val1, val2 in postion_in_key:
             position_in_pk.append(all_city_obj.get(city=val1, district= val2).pk)
 
-        weather_data = series.objects.filter(city_id__in = position_in_pk)
-        
         # weather
+        weather_data = series.objects.filter(city_id__in = position_in_pk).exclude(measure__in=['曝曬級數','自定義 Wx 單位'])
+
         dict_queryset_weather = {}
         weather_data = weather_data.filter(
             start_time__year = travel_date_format.date().year, 
             start_time__month = travel_date_format.date().month, 
             start_time__day = travel_date_format.date().day, 
-            time_unit = request_data['time_unit']),
-        weather_data = weather_data[0].prefetch_related('city')
+            time_unit = request_data['time_unit'],
+            )
+        
+        weather_data = weather_data.prefetch_related('city')
         weather_data = weather_data.prefetch_related('items')
+        description_list = {
+            "MaxCI": {
+                "name" : "ciDescription",
+                "define" : constant.CI_LEVEL
+                },
+            "UVI": {
+                "name" : "uviDescription",
+                "define" : constant.UVI_LEVEL
+                },
+            "Wx": {
+                "name" : "wxDescription",
+                "define" : constant.WX_LEVEL
+                },
+            "WS": {
+                "name" : "wsDescription",
+                "define" : constant.WS_LEVEL
+                },
+        }
 
         for _obj in weather_data:
             city_key = f"{_obj.city.city},{_obj.city.district}"
             _dict_content = _obj.__dict__
             if not dict_queryset_weather.get(city_key, ''):
                 dict_queryset_weather[city_key] = {}
-            dict_queryset_weather[city_key][_obj.items.element_name] = _dict_content['value']
+            _element_name = _obj.items.element_name    
+            if _element_name in description_list.keys():
+                _new_description = description_list[_element_name]
+                dict_queryset_weather[city_key][_new_description['name']] = _new_description['define'][_dict_content['value']]
+            dict_queryset_weather[city_key][_element_name] = _dict_content['value']
 
         filtered_sights = []
         all_sights = sights.objects.all()
         for _data in filter_as_data:
             filtered_sights.extend(all_sights.filter(city=_data['city'], district= _data['district']).values())
-
+        
         for element in filtered_sights:
             element['images'] = element['images'].split(',')
             element['url'] = element['url'].split(',')
@@ -140,6 +165,8 @@ class Date_Processor(APIView):
     def post(self, request):
         with open('./dist/weather.json', 'rb+') as f:
            all_data = json.load(f)
+
+        # import city
         city_allow_columns = {
             'city' : 'city', 
             'location' : 'district', 
@@ -152,7 +179,8 @@ class Date_Processor(APIView):
         if city_serializers.is_valid():
             city_serializers.save()
             # return Response(city_serializers.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
+        # import items
         items_allow_columns = {
             'description' : 'description', 
             'elementName' : 'element_name', 
@@ -165,7 +193,7 @@ class Date_Processor(APIView):
             items_serializers.save()
             # return Response(items_serializers.errors, status=status.HTTP_400_BAD_REQUEST)
         
-
+        # import series
         series_allow_columns = {
             'measures' : 'measure', 
             'value' : 'value', 
@@ -177,7 +205,7 @@ class Date_Processor(APIView):
         }
         series_data = trans_data_format(all_data, series_allow_columns)
         items_obj = items.objects.all()
-        city_obj = city.objects.all()
+        city_obj = city.objects.filter(city=city_data[0]['city'])
         # print(items_obj.filter(element_name = 'PoP12h'), city_obj.filter(district='北投區'))
         items_mapping = {i['element_name']:i['id'] for i in items_obj.values('id','element_name') }
         city_mapping = {i['district']:i['id'] for i in city_obj.values('id','district') }
