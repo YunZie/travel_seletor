@@ -8,26 +8,27 @@ class SeriesSerializers(serializers.ModelSerializer):
 		return series.objects.create(**validated_data)
 
 	def validate(self, attrs):
-
 		# Insert not duplicating data.
 		time_unit = attrs.get('time_unit')
 		city_id = attrs.get('city_id')
 		items_id = attrs.get('items_id')
 		measure = attrs.get('measure')
-
+		
 		try:
+			
 			get_db_val = series.objects.get(
 				city_id = city_id,
 				measure = measure,
 				items_id = items_id,
 				time_unit = time_unit,
 				)
-		except series.DoesNotExist:
-			return series.objects.create(**attrs)
-		if self.object and get_db_val.id == self.object.id:
-			return series.objects.create(**attrs)
-		else:
 			raise serializers.ValidationError('already exists')
+		except series.DoesNotExist:
+			return attrs #series.objects.create(**attrs)
+		# if self.object and get_db_val.id == self.object.id:
+		# 	return series.objects.create(**attrs)
+		# else:
+			
 
 	class Meta:
 		model = series
@@ -36,8 +37,8 @@ class SeriesSerializers(serializers.ModelSerializer):
 			'value',
 			'start_time',
 			'end_time',
-			'city_id',
-			'items_id',
+			'city',
+			'items',
 			'time_unit',
 		)
 
@@ -46,7 +47,9 @@ class CitySerializers(serializers.ModelSerializer):
 	
 	def create(self, validated_data):
 		return city.objects.create(**validated_data)
+
 	def validate(self, attrs):
+		print(attrs)
 		city_name = attrs.get('city')
 		district = attrs.get('district')
 		try:
@@ -54,12 +57,9 @@ class CitySerializers(serializers.ModelSerializer):
 					city = city_name,
 					district = district,
 				)
-		except city.DoesNotExist:
-			return city.objects.create(**attrs)
-		if self.object and get_db_val.id == self.object.id:
-			return city.objects.create(**attrs)
-		else:
 			raise serializers.ValidationError('already exists')
+		except city.DoesNotExist:
+			return attrs # city.objects.create(**attrs)		
 		
 	class Meta:
 		model = city

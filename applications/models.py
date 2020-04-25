@@ -53,3 +53,42 @@ class series(models.Model):
 
     class Meta:
         unique_together = ('city', 'items', 'measure', 'start_time')
+
+class sights(models.Model):
+    id = models.AutoField(
+        primary_key=True,
+        )
+
+    name = models.CharField(
+        max_length = 50,
+    )
+
+    city = models.CharField(
+        max_length = 10,
+    )
+
+    district = models.CharField(
+        max_length = 10,
+    )
+
+    address = models.CharField(
+        max_length = 100,
+    )
+
+    elong = models.FloatField()
+
+    nlat = models.FloatField()
+
+    introduction = models.TextField()
+
+    target = models.CharField(
+        max_length = 30,
+    )
+    images = models.TextField()
+    
+    url = models.TextField()
+
+    sourceType = models.IntegerField()
+
+    class Meta:
+        unique_together = ('name', 'address')
