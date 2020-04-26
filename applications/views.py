@@ -1,5 +1,3 @@
-from oauth2_provider.contrib.rest_framework import OAuth2Authentication
-
 from django import core
 from django.http import JsonResponse, HttpResponse, QueryDict
 from django.contrib import auth, messages
@@ -16,7 +14,6 @@ from django.db import connection
 import json
 import os
 import re
-import coreapi
 import datetime
 from operator import itemgetter
 from math import sin, cos, sqrt, atan2, radians
