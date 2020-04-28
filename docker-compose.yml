@@ -10,8 +10,7 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - db
-      - es
+      - mariadb
   mariadb:
     image: mariadb:10.2
     environment:
