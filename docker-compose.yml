@@ -5,17 +5,19 @@ services:
     build: .
     command: python manage.py runserver 0.0.0.0:8000
     restart: always
-    # volumes:
-    #   - db:/API_5G_Tools
+    volumes:
+      - ./:/code
     ports:
       - "8000:8000"
     depends_on:
       - mariadb
+    environment:
+      - "TZ=Asia/Taipei"
   mariadb:
     image: mariadb:10.2
     environment:
       - MYSQL_ROOT_PASSWORD=123456
-      - MYSQL_DATABASE=users
+      - MYSQL_DATABASE=travel
       - MYSQL_USER=jerry
       - MYSQL_PASSWORD=123456
     restart: always
@@ -27,3 +29,4 @@ services:
 volumes:
   mydata:
     driver: local
+

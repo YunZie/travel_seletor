@@ -28,5 +28,6 @@ urlpatterns = [
 urlpatterns += [
     url(r'^data_import/$', app.Date_Processor.as_view()),
     url(r'^travel/$', app.Travel_API.as_view()),
+    url(r'^hello/$', app.Hello_World.as_view()),
     # url(r'^mgr/$', app.AdminMgr.as_view()),
 ]
