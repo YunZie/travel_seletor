@@ -55,9 +55,9 @@ def getDistance(latA, lonA, latB, lonB):
 class Hello_World(APIView):
     def get(self, request):
         now_time = (datetime.datetime.now() + datetime.timedelta(hours=8)).strftime("%Y/%m/%d %H:%M:%S")
-        text = f"""<h1> 安安 早啊!!!! 
+        text = f"""<h1> 璽禎還在混阿!!!! 
         <br>我應該還在睡 不要亂攻擊我電腦 
-        <br>不過你可以駭進來!!!
+        <br>YIOYOYOYOYOO!!!
         </h1>
         <br><h3> 現在時間是 : {now_time} </h3>
         """
@@ -66,7 +66,54 @@ class Hello_World(APIView):
 class Travel_API(APIView):
     def get(self, request):
         request_data = request.data
-        #  = sights.objects.filter(id__in = request_data[''])
+        result = []
+        for _element in request_data:
+            travel_date_format = datetime.datetime.fromtimestamp(_element['time']/1000.0)
+            travel_date = travel_date_format.strftime('%Y-%m-%d')
+
+            sights_obj = sights.objects.get(id = _element['attraction_id'])
+            series_obj = series.objects.filter(
+                start_time__year = travel_date_format.date().year, 
+                start_time__month = travel_date_format.date().month, 
+                start_time__day = travel_date_format.date().day, 
+                time_unit = _element['time_unit']
+            )
+            series_obj = series_obj.exclude(measure__in=['曝曬級數','自定義 Wx 單位'])
+            description_list = {
+                "MaxCI": {
+                    "name" : "ciDescription",
+                    "define" : constant.CI_LEVEL
+                    },
+                "UVI": {
+                    "name" : "uviDescription",
+                    "define" : constant.UVI_LEVEL
+                    },
+                "Wx": {
+                    "name" : "wxDescription",
+                    "define" : constant.WX_LEVEL
+                    },
+                "WS": {
+                    "name" : "wsDescription",
+                    "define" : constant.WS_LEVEL
+                    },
+            }
+
+            dict_queryset_weather = {}
+            for _obj in series_obj:
+                _dict_content = _obj.__dict__
+                _element_name = _obj.items.element_name    
+                if _element_name in description_list.keys():
+                    _new_description = description_list[_element_name]
+                    dict_queryset_weather[_new_description['name']] = _new_description['define'][_dict_content['value']]
+                dict_queryset_weather[_element_name] = _dict_content['value']
+            dict_sights = sights_obj.__dict__
+            del dict_sights['_state']
+            result.append({
+                'attraction' : dict_sights,
+                'weather' : dict_queryset_weather,
+            })
+
+        return JsonResponse(result , safe=False)
 
     def post(self, request):
         request_data = request.data
@@ -114,9 +161,9 @@ class Travel_API(APIView):
         result_sql = city_output_sql.format(
             filter_condition = ' AND '.join(dict_filter)
             )
-        print(result_sql)
         filter_as_data = pd.read_sql(result_sql.encode('utf8'), connection).to_dict('records')
         
+        # mapping city and district
         postion_in_key = list(set([(i['city'], i['district']) for i in filter_as_data]))
         all_city_obj = city.objects.all()
         position_in_pk = []
@@ -242,8 +289,7 @@ class Date_Processor(APIView):
             # print(items_obj.filter(element_name = 'PoP12h'), city_obj.filter(district='北投區'))
             items_mapping = {i['element_name']:i['id'] for i in items_obj.values('id','element_name') }
             city_mapping = {i['district']:i['id'] for i in city_obj.values('id','district') }
-            print(items_mapping)
-            print(city_mapping)
+
             for element in series_data:
                 element['items'] = items_mapping[element['items']]
                 element['city'] = city_mapping[element['city']]
