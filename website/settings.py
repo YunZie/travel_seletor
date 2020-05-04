@@ -25,7 +25,7 @@ CORS_ALLOW_CREDENTIALS = True
 SECRET_KEY = 'urf70#*=7xs=xq(zg6ll#(glzd(v3u46ptrf*^lkm&y#quwchl'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 

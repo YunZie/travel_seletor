@@ -55,7 +55,7 @@ def getDistance(latA, lonA, latB, lonB):
 class Hello_World(APIView):
     def get(self, request):
         now_time = (datetime.datetime.now() + datetime.timedelta(hours=8)).strftime("%Y/%m/%d %H:%M:%S")
-        text = f"""<h1> 璽禎還在混阿!!!! 
+        text = f"""<h1> HELLOOOOOOOO WORLDDDDDDDDD!!!! 
         <br>我應該還在睡 不要亂攻擊我電腦 
         <br>YIOYOYOYOYOO!!!
         </h1>
@@ -78,7 +78,7 @@ class Travel_API(APIView):
                 start_time__day = travel_date_format.date().day, 
                 time_unit = _element['time_unit']
             )
-            series_obj = series_obj.exclude(measure__in=['曝曬級數','自定義 Wx 單位'])
+            series_obj = series_obj.exclude(measure__in=['曝曬級數','自定義 Wx 單位', '公尺/秒'])
             description_list = {
                 "MaxCI": {
                     "name" : "ciDescription",
@@ -133,7 +133,8 @@ class Travel_API(APIView):
         dict_filter = []
         sub_filter_str = []
         include_data = ['Wx']
-
+        measure_not_in = ['曝曬級數','自定義 Wx 單位']
+        str_measure_not = "','".join(measure_not_in)
         travel_date_format = datetime.datetime.fromtimestamp(request_data['time']/1000.0)
         travel_date = travel_date_format.strftime('%Y-%m-%d')
         last_element_type = ""
@@ -142,7 +143,7 @@ class Travel_API(APIView):
                 _str_value = ','.join([str(i) for i in element['value']])
                 str_sql = f"(element_name = '{element['type']}' AND value IN ({_str_value}) AND DATE(start_time) = '{travel_date}' AND time_unit = '{request_data['time_unit']}')"
             else:
-                str_sql = f"(element_name = '{element['type']}' AND value BETWEEN {element['lowValue']} AND {element['highValue']} AND DATE(start_time) = '{travel_date}' AND time_unit = '{request_data['time_unit']}')"
+                str_sql = f"(element_name = '{element['type']}' AND value BETWEEN {element['lowValue']}  AND {element['highValue']} AND DATE(start_time) = '{travel_date}' AND time_unit = '{request_data['time_unit']}')"
   
             if last_element_type != element['type'] and last_element_type:
                 sub_result = base_sql.format(
@@ -171,13 +172,14 @@ class Travel_API(APIView):
             position_in_pk.append(all_city_obj.get(city=val1, district= val2).pk)
 
         # weather
-        weather_data = series.objects.filter(city_id__in = position_in_pk).exclude(measure__in=['曝曬級數','自定義 Wx 單位'])
+        weather_data = series.objects.filter(city_id__in = position_in_pk).exclude(measure__in=measure_not_in)
 
         dict_queryset_weather = {}
         weather_data = weather_data.filter(
-            start_time__year = travel_date_format.date().year, 
-            start_time__month = travel_date_format.date().month, 
-            start_time__day = travel_date_format.date().day, 
+            start_time__date = travel_date_format.date(),
+            # start_time__year = travel_date_format.date().year, 
+            # start_time__month = travel_date_format.date().month, 
+            # start_time__day = travel_date_format.date().day, 
             time_unit = request_data['time_unit'],
             )
         
